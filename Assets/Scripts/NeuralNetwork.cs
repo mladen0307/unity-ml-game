@@ -60,61 +60,59 @@ public class NeuralNetwork
 
         public double[] FeedForward(double[] input)
         {
-            // Validation Checks
+            
             if (input == null)
                 throw new ArgumentException("The input array cannot be set to null.", "Input");
             else if (input.Length != _weights.Length - 1)
                 throw new ArgumentException("The input array's length does not match the number of neurons in the input layer.", "Input");
 
-            // Initialize Output Array
+            
             double[] Output = new double[_weights[0].Length];
 
-            // Calculate Value
+            
             for (int i = 0; i < _weights.Length; i++)
             {
                 for (int j = 0; j < _weights[i].Length; j++)
                 {
                     if (i == _weights.Length - 1) // If is Bias Neuron
-                        Output[j] += _weights[i][j]; // Then, the value of the neuron is equal to one
+                        Output[j] += _weights[i][j]; 
                     else
                         Output[j] += _weights[i][j] * input[i];
                 }
             }
 
-            // Apply Activation Function
+            
             for (int i = 0; i < Output.Length; i++)
                 Output[i] = ReLU(Output[i]);
 
-            // Return Output
+            
             return Output;
         }
 
-        /// <summary>
-        /// Mutate the NeuralSection.
-        /// </summary>
-        /// <param name="mutationProbablity">The probability that a weight is going to be mutated. (Ranges 0-1)</param>
-        /// <param name="mutationAmount">The maximum amount a Mutated Weight would change.</param>
-        public void Mutate(double mutationProbablity, double mutationAmount)
+        
+        public void Crossover(NeuralSection other)
         {
+            if (_weights.Length != other._weights.Length || _weights[0].Length != other._weights[0].Length)
+                throw new ArgumentException("Neural Sections must be of equal size");
             for (int i = 0; i < _weights.Length; i++)
             {
                 for (int j = 0; j < _weights[i].Length; j++)
                 {
-                    if (UnityEngine.Random.value < mutationProbablity)
-                        _weights[i][j] = UnityEngine.Random.value * (mutationAmount * 2) - mutationAmount;
+                    if (UnityEngine.Random.value < 0.5f)
+                        _weights[i][j] = other._weights[i][j];
                 }
             }
         }
 
-        public void MutateNodes(double MutationProbablity, double MutationAmount)
+        public void Mutate(double MutationProbablity, double MutationAmount)
         {
-            for (int j = 0; j < _weights[0].Length; j++) // For each output node
+            for (int j = 0; j < _weights[0].Length; j++) 
             {
-                if (UnityEngine.Random.value < MutationProbablity) // Check if we are going to mutate this node
+                if (UnityEngine.Random.value < MutationProbablity) 
                 {
-                    for (int i = 0; i < _weights.Length; i++) // For each input node connected to the current output node
+                    for (int i = 0; i < _weights.Length; i++) 
                     {
-                        _weights[i][j] = UnityEngine.Random.value * (MutationAmount * 2) - MutationAmount; // Mutate the weight connecting both nodes
+                        _weights[i][j] = UnityEngine.Random.value * (MutationAmount * 2) - MutationAmount; 
                     }
                 }
             }
@@ -143,7 +141,7 @@ public class NeuralNetwork
 
     public NeuralNetwork(int[] topology)
     {
-        // Validation Checks
+        
         if (topology.Length < 2)
             throw new ArgumentException("A Neural Network cannot contain less than 2 Layers.", "Topology");
 
@@ -153,33 +151,30 @@ public class NeuralNetwork
                 throw new ArgumentException("A single layer of neurons must contain, at least, one neuron.", "Topology");
         }
 
-        // Set Topology
+       
         _topology = new List<int>(topology);
 
-        // Initialize Sections
+        
         _sections = new NeuralSection[_topology.Count - 1];
 
-        // Set the Sections
+      
         for (int i = 0; i < _sections.Length; i++)
         {
             _sections[i] = new NeuralSection(_topology[i], _topology[i + 1]);
         }
     }
 
-    /// <summary>
-    /// Initiates an independent Deep-Copy of the Neural Network provided.
-    /// </summary>
-    /// <param name="main">The Neural Network that should be cloned.</param>
+   
     public NeuralNetwork(NeuralNetwork main)
     {
        
-        // Set Topology
+      
         _topology = main._topology;
 
-        // Initialize Sections
+        
         _sections = new NeuralSection[_topology.Count - 1];
 
-        // Set the Sections
+       
         for (int i = 0; i < _sections.Length; i++)
         {
             _sections[i] = new NeuralSection(main._sections[i]);
@@ -189,7 +184,7 @@ public class NeuralNetwork
 
     public double[] FeedForward(double[] input)
     {
-        // Validation Checks
+        
         if (input == null)
             throw new ArgumentException("The input array cannot be set to null.", "Input");
         else if (input.Length != _topology[0])
@@ -197,35 +192,29 @@ public class NeuralNetwork
 
         double[] Output = input;
 
-        // Feed values through all sections
+      
         for (int i = 0; i < _sections.Length; i++)
         {
             Output = _sections[i].FeedForward(Output);
         }
-
         return Output;
     }
 
-    /// <summary>
-    /// Mutate the NeuralNetwork.
-    /// </summary>
-    /// <param name="mutationProbablity">The probability that a weight is going to be mutated. (Ranges 0-1)</param>
-    /// <param name="mutationAmount">The maximum amount a mutated weight would change.</param>
-    public void Mutate(double mutationProbablity = 0.3, double mutationAmount = 2.0)
+    
+    public void Crossover(NeuralNetwork other)
     {
-        // Mutate each section
         for (int i = 0; i < _sections.Length; i++)
         {
-            _sections[i].Mutate(mutationProbablity, mutationAmount);
+            _sections[i].Crossover(other._sections[i]);
         }
     }
 
-    public void MutateNodes(double mutationProbablity = 0.3, double mutationAmount = 2.0)
+    public void Mutate(double mutationProbablity = 0.3, double mutationAmount = 2.0)
     {
-        // Mutate each section
+        
         for (int i = 0; i < _sections.Length; i++)
         {
-            _sections[i].MutateNodes(mutationProbablity, mutationAmount);
+            _sections[i].Mutate(mutationProbablity, mutationAmount);
         }
     }
 

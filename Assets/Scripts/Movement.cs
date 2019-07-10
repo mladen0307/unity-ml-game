@@ -23,11 +23,17 @@ public class Movement : MonoBehaviour {
     double[] distances= new double[5];
     //LineRenderer lineRender;
 
-    public NeuralNetwork myNeuralNet;
-    public float currentDistance;
-    public float maxDistance = 0f;
-    float lastMaxChange = 0f;
+    public NeuralNetwork myNeuralNet;    
     NeuralController neuralController;
+
+    //public float currentDistance;
+    //public float maxDistance = 0f;
+    //float lastMaxChange = 0f;
+
+    public float fitness = 0;
+
+
+   
 
     void Start()
     {        
@@ -36,6 +42,7 @@ public class Movement : MonoBehaviour {
         wallMask = LayerMask.GetMask("Wall");
         neuralController = transform.parent.GetComponent<NeuralController>();
         //lineRender = GetComponent<LineRenderer>();
+       
         
     }
 
@@ -48,23 +55,18 @@ public class Movement : MonoBehaviour {
             GetInputsFromNN();
             //PollInputs();        
             Move();
-            SetMaxDistance();
+            UpdateFitness();            
         }
     }
 
-    void SetMaxDistance()
+    void UpdateFitness()
     {
-        currentDistance = transform.position.magnitude;
-        if (currentDistance > maxDistance + 1f)
+        for (int i = 0; i < 5; i++)
         {
-            lastMaxChange = Time.time;
-            maxDistance = currentDistance;
-        }
-        if (Time.time - lastMaxChange > 2.5f)
-        {            
-            Die();
+            fitness = fitness + (float)distances[i] * 0.005f;
         }
     }
+
 
     void GetInputsFromNN()
     {
@@ -106,11 +108,13 @@ public class Movement : MonoBehaviour {
     {
         anim.SetBool("IsMoving", true);
         anim.SetBool("IsDead", false);
+        
+        transform.position = neuralController.transform.position;
+        transform.rotation = neuralController.transform.rotation;
 
-        transform.position = new Vector3(0f, 0f, 0f);
-        transform.rotation = Quaternion.identity;
-        maxDistance = 0f;
-        lastMaxChange = Time.time;
+        fitness = 0;
+        //maxDistance = 0f;
+        //lastMaxChange = Time.time;
 
         IsMoving = true;
     }

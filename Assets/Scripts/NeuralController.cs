@@ -17,8 +17,10 @@ public class NeuralController : MonoBehaviour {
     List<Movement> agents;
     Movement agent;
 
-    NeuralNetwork bestNetwork = new NeuralNetwork(new int[4] { 5, 3, 2, 1 });
-    float bestScore = -1f;    
+    NeuralNetwork bestNetwork = new NeuralNetwork(new int[3] { 5, 3, 1 });
+    NeuralNetwork runnerUpNetwork = new NeuralNetwork(new int[3] { 5, 3, 1 });
+    float bestFitness = -1f;
+    float runnerUpFitness = -1f;
     int deathCount;
     
     void Start()
@@ -39,13 +41,13 @@ public class NeuralController : MonoBehaviour {
     public Transform AgentToFollow
     {
         get {
-            float best = agents[0].currentDistance;
+            float best = agents[0].fitness;
             Transform a = agents[0].transform;
             for (int i = 1; i < generationSize; i++)
             {
-                if (best < agents[i].currentDistance && agents[i].IsMoving)
+                if (best < agents[i].fitness && agents[i].IsMoving)
                 {
-                    best = agents[i].currentDistance;
+                    best = agents[i].fitness;
                     a = agents[i].transform;
                 }
             }
@@ -55,28 +57,51 @@ public class NeuralController : MonoBehaviour {
 
     public void Death(int id)
     {
-        if (agents[id].maxDistance > bestScore)
+        if (agents[id].fitness > bestFitness)
         {
-            bestScore = agents[id].maxDistance;
+            runnerUpNetwork = bestNetwork;
+            runnerUpFitness = bestFitness;
+            bestFitness = agents[id].fitness;
             bestNetwork = agents[id].myNeuralNet;
-            
         }
+        else if (agents[id].fitness > runnerUpFitness)
+        {
+            runnerUpFitness = agents[id].fitness;
+            runnerUpNetwork = agents[id].myNeuralNet;
+        }
+        
         deathCount++;        
         if (deathCount == generationSize)
-            Invoke("NextGeneration", 0.5f);
+            Invoke("NextGeneration", 0.3f);
     }
 
     void NextGeneration()
     {
-        
+        transform.Rotate(Vector3.up, 180f);
         deathCount = 0;
-        agents[0].myNeuralNet = new NeuralNetwork(bestNetwork);
-        //Debug.Log(bestScore);
-        agents[0].Respawn();        
-        for (int i = 1; i < generationSize; i++)
+        agents[0].myNeuralNet = new NeuralNetwork(bestNetwork);        
+        agents[0].Respawn();
+        //Debug.Log(bestFitness);
+
+        //rekombinacije najbolja 2
+        for (int i = 1; i < generationSize/3; i++)
         {            
+            agents[i].myNeuralNet = new NeuralNetwork(runnerUpNetwork);
+            agents[i].myNeuralNet.Crossover(bestNetwork);
+            agents[i].Respawn();
+        }
+        //dristicna mutacije najboljeg
+        for (int i = generationSize / 3; i < 2*generationSize/3; i++)
+        {
             agents[i].myNeuralNet = new NeuralNetwork(bestNetwork);
-            agents[i].myNeuralNet.MutateNodes();
+            agents[i].myNeuralNet.Mutate(0.3,2.0);
+            agents[i].Respawn();
+        }
+        //blaga mutacije najboljeg
+        for (int i = 2 * generationSize / 3; i <generationSize; i++)
+        {
+            agents[i].myNeuralNet = new NeuralNetwork(bestNetwork);
+            agents[i].myNeuralNet.Mutate(0.3, 1.0);
             agents[i].Respawn();
         }
         generationCount++;
